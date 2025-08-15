@@ -42,4 +42,6 @@ func main() {
 	}
 
 	ginEngine.POST("/players", playerHandler.CreatePlayer)
+
+	ginEngine.Run(":8080")
 }
