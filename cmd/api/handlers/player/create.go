@@ -2,6 +2,8 @@ package player
 
 import (
 	"api/internal/domain"
+	"errors"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
@@ -22,8 +24,25 @@ func (h Handler) CreatePlayer(c *gin.Context) {
 
 	insertedId, err := h.PlayerService.Create(playerCreateParams)
 	if err != nil {
-		c.JSON(500, gin.H{"error": "Failed to create player"})
+		RespondError(err, c)
 	}
 
 	c.JSON(200, gin.H{"message": insertedId})
+}
+
+func RespondError(err error, c *gin.Context) {
+	var appErr *domain.AppError
+	if errors.As(err, &appErr) {
+		switch appErr.Code {
+		case domain.ErrorCodeDuplicateKey:
+			c.JSON(http.StatusConflict, appErr)
+			return
+		case domain.ErrorCodeNotFound:
+			c.JSON(http.StatusNotFound, appErr)
+			return
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+			return
+		}
+	}
 }
